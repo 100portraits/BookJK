@@ -1,8 +1,9 @@
 import { getAuth } from "firebase/auth";
 import { useState, useEffect } from "react";
-import { collection, deleteDoc, getDocs, doc, updateDoc} from "firebase/firestore";
+import { collection, getDocs} from "firebase/firestore";
 import { db } from "../../firebase-config";
 import ReactTimeAgo from "react-time-ago";
+import ConfirmDelete from "../../components/ConfirmDelete";
 
 function Bookings() {
 
@@ -41,6 +42,7 @@ function Bookings() {
             setMyBookings(allBookings.filter(matchUser));
         }
         getMyBookings();
+
         
         //create dictionary of room IDs and corresponding numbers
         const getRooms = async () => {
@@ -63,19 +65,7 @@ function Bookings() {
     
     }, [bookingStateHelper, user]);
     
-    const deleteBooking = async (booking) => {
-        
-        //remove from bookings collection
-        await deleteDoc(doc(db, 'bookings', booking.id));
-        
-        //set room to unbooked
-        const roomDoc = doc(db, "rooms", booking.roomID);
-        const newFields = {
-            occupied: false
-        }
-        await updateDoc(roomDoc, newFields);
-
-        //use bookingstate helper for useeffect
+    const updateBookingStateHelper = () => {
         setBookingStateHelper(!bookingStateHelper);
     }
 
@@ -88,7 +78,14 @@ function Bookings() {
                     <div className='m-5 mx-auto shadow-md bg-base-200 rounded-md max-w-screen-md px-4 py-3 flex justify-between items-center gap-5'>
                         <h2 className="text-2xl">{rooms[booking.roomID]}</h2>
                         <h2 className="text-lg">Booked since: <ReactTimeAgo date={booking.timestamp} locale="nl-NL" timeStyle='round'/></h2>
-                        <button className="btn bg-base-300 shadow-sm border-0" onClick={() => deleteBooking(booking)}>Delete Booking</button>
+                        <ConfirmDelete onClick={updateBookingStateHelper}
+                            roomNumber={rooms[booking.roomID]}
+                            roomID={booking.roomID}
+                            bookingID={booking.id}
+                            modalID={booking.id}
+                            username={user.displayName}
+                            statehelper={bookingStateHelper}
+                        /> 
                     </div>
                 );
                 })
@@ -96,5 +93,7 @@ function Bookings() {
         </div>
     );
 }
+
+
 
 export default Bookings;

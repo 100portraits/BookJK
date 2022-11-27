@@ -3,15 +3,22 @@ import '../../tailwind-imports.css';
 import {db} from '../../firebase-config';
 import {collection, getDocs, updateDoc, doc, addDoc, serverTimestamp} from 'firebase/firestore';
 import { getAuth, onAuthStateChanged} from "firebase/auth";
-import useCollapse from 'react-collapsed';
 import ViewBookings from '../../components/ViewBookings';
+import { useNavigate } from "react-router-dom";
+import ConfirmBooking from '../../components/ConfirmBooking';
 
 
 
 function Rooms() {
-  const { getCollapseProps, getToggleProps, isExpanded } = useCollapse();
-  
+
+  const navigate = useNavigate();
+
+  //list of rooms
+  const [rooms, setRooms] = useState([]);
+
   const [bookings, setBookings] = useState({});
+
+  
   const [username, setUsername] = useState("");
 
   //get user
@@ -30,37 +37,10 @@ function Rooms() {
     }
   });
 
-
-  const [bookingStateHelper, setBookingStateHelper] = useState(true); 
   
-  //list of rooms
-  const [rooms, setRooms] = useState([]);
-  
-  
-  const bookRoom = async(id, prevState) => {
-    if(!user) {
-      alert("sign in first");
-      return 0;
-    }
-    //change value in rooms collection
-    const roomDoc = doc(db, "rooms", id);
-    const newFields = {
-      occupied: true
-    }
-    await updateDoc(roomDoc, newFields);
 
-    //add booking to bookings collection
-    const docRef = await addDoc(collection(db, "bookings"), {
-      roomID: id,
-      userUID: user.uid,
-      username: username,
-      timestamp: Date(serverTimestamp().seconds*1000)
-    });
-    console.log("Booking created with ID: ", docRef.id);
+  
 
-    //update the state to call useEffect, update the page
-    setBookingStateHelper(!bookingStateHelper);
-  }
 
   useEffect(() => {
     
@@ -73,10 +53,16 @@ function Rooms() {
       let bookingsArray=data.docs.map((doc) => ({
           roomID: doc.data().roomID,
           username: doc.data().username,
+          bookedUntil: doc.data().bookUntil,
+          bookingNote: doc.data().bookingNote
       }));
       let bookingsDict={}
       for (const booking of bookingsArray) {
-          bookingsDict[booking.roomID] = booking.username;
+          bookingsDict[booking.roomID] = {
+            username: booking.username,
+            bookedUntil: booking.bookedUntil, 
+            bookingNote: booking.bookingNote
+          };
       }
       setBookings(bookingsDict);
       console.log(bookingsDict)
@@ -98,9 +84,8 @@ function Rooms() {
 
 
     //update using a bookingstate helper called in the bookRoom function
-  }, [bookingStateHelper, username]);
+  }, [username]);
 
-  
 
   return (
     <div className="Rooms mx-10 my-0">
@@ -120,12 +105,22 @@ function Rooms() {
                 <>
                 {room.occupied ? 
                   <ViewBookings 
-                    username = {bookings[room.id]}
+                    username = {bookings[room.id].username}
                     modalID = {room.id}
+                    bookedUntil = {bookings[room.id].bookedUntil}
+                    bookingNote = {bookings[room.id].bookingNote}
                   />
+                  //<p>{bookings[room.id]}</p>
+  
                   :
-                  <button className='btn bg-base-300 shadow-sm border-0' onClick={() => {bookRoom(room.id, room.occupied)}}>BOOK</button>
-                  }
+                    <ConfirmBooking
+                              roomNumber={room.number}
+                              roomID={room.id}
+                              userUID={user.uid}
+                              modalID={room.number}
+                              username={user.displayName}
+                    /> 
+                }
                 </>
               }
               

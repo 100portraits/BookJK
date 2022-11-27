@@ -1,10 +1,10 @@
 import './tailwind-imports.css';
 import Rooms from './pages/rooms';
 import Bookings from './pages/bookings';
-import Login from './components/Login';
 import Home from './pages/home';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from './Layout';
+
 
 function App() {
   return (
