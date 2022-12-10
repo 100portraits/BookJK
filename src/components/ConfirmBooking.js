@@ -30,16 +30,19 @@ function ConfirmBooking({roomNumber, roomID, userUID, modalID, username}) {
         await updateDoc(roomDoc, newFields);
 
         //add booking to bookings collection
-        const docRef = await addDoc(collection(db, "bookings"), {
-            roomID: roomID,
-            userUID: userUID,
-            username: username,
-            timestamp: Date(serverTimestamp().seconds*1000),
-            bookUntil: bookingTime,
-            bookingNote: bookingNote
-        });
+        try{
+            await addDoc(collection(db, "bookings"), {
+                roomID: roomID,
+                userUID: userUID,
+                username: username,
+                timestamp: Date(serverTimestamp().seconds*1000),
+                bookUntil: bookingTime,
+                bookingNote: bookingNote
+            });
+        } catch(e) {
+            alert("please enter a time")
+        }
 
-        console.log("Booking created with ID: ", docRef.id);
 
         navigate("../pages/bookings")
     }
@@ -57,7 +60,7 @@ function ConfirmBooking({roomNumber, roomID, userUID, modalID, username}) {
 
                 <div className="block">
                     <label className="font-normal text-md pr-3">Book until:</label>
-                    <input type="time" onChange={(e) => setBookingTime(e.currentTarget.value)} min="09:00" max="18:00" required className="text-inherit bg-inherit rounded-md border-slate-400 border-2 p-2 mt-2 max-w-md"/>
+                    <input type="datetime-local" onChange={(e) => setBookingTime(e.currentTarget.value)} min="09:00" max="18:00" required className="text-inherit bg-inherit rounded-md border-slate-400 border-2 p-2 mt-2 max-w-md"/>
                 </div>
                 <div className="block mt-5">
                     <label className="font-normal text-md pr-3">leave a note:</label>
